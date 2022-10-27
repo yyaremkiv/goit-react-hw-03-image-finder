@@ -18,43 +18,36 @@ const newsApiService = new NewsApiService();
 
 export class App extends Component {
   state = {
-    nameImage: '',
-    imageGallery: null,
+    searchName: '',
+    imageGallery: [],
     page: 1,
     error: null,
     status: Status.IDLE,
-    loadButtonShow: false,
+
   };
 
   async componentDidUpdate(prevProps, prevState) {
-    const prevName = prevState.nameImage;
-    const nextName = this.state.nameImage;
+    const { searchName, imageGallery, page } = this.state;
 
-    if (prevName !== nextName) {
+    if (prevState.searchName !== searchName || prevState.page !== page) {
       this.setState({ status: Status.PENDING });
 
       try {
-        const response = await newsApiService.getResponse(
-          this.state.nameImage,
-          this.state.page
-        );
-        const { hits, totalHits } = response.data;
-        if (!hits.length) {
-          alert(
-            'Sorry, there are no images matching your search query. Please try again.'
-          );
-          this.setState({ status: Status.RESOLVED });
-          return;
+        const response = await newsApiService.getResponse(searchName, page);
+
+        if (!imageGallery.length) {
+          this.setState({
+            imageGallery: response.data.hits,
+            status: Status.RESOLVED,
+          });
         }
 
-        if (this.state.imageGallery) {
-          console.log(this.state.imageGallery);
+        if (imageGallery.length) {
+          this.setState({
+            imageGallery: [...prevState.imageGallery, ...response.data.hits],
+            status: Status.RESOLVED,
+          });
         }
-        this.setState({
-          imageGallery: response.data.hits,
-          status: Status.RESOLVED,
-          loadButtonShow: true,
-        });
       } catch (error) {
         this.setState({ error, status: Status.REJECTED });
         return;
@@ -62,55 +55,29 @@ export class App extends Component {
     }
   }
 
-  loadMore = async query => {
-    try {
-      const response = await newsApiService.getResponse(query);
-      const { hits, totalHits } = response.data;
-      if (!hits.length) {
-        alert(
-          'Sorry, there are no images matching your search query. Please try again.'
-        );
-        this.setState({ status: Status.RESOLVED });
-        return;
-      }
-
-      // if (this.state.imageGallery) {
-      //   console.log(this.state.imageGallery);
-      // }
-      this.setState(prevState => ({
-        imageGallery: [response.data.hits],
-      }));
-    } catch (error) {
-      // this.setState({ error, status: Status.REJECTED });
-      return;
-    }
-  };
-
   handleLoadMore = () => {
     this.setState(prevState => ({
       page: prevState.page + 1,
-      loadButtonShow: true,
     }));
-    // this.loadMore(this.props.nameImage, this.state.page);
   };
 
-  handleChangeName = nameImage => {
-    this.setState({ nameImage });
+  onSubmitForm = searchName => {
+    this.setState({ searchName, imageGallery: [] });
   };
 
   render() {
-    const { handleChangeName } = this;
-    const { imageGallery } = this.state;
+    const { onSubmitForm, handleLoadMore } = this;
+    const { imageGallery, status } = this.state;
 
     return (
-      <div>
-        <Searchbar onSubmit={this.loadMore} />
-
+      <>
+        <Searchbar onSubmit={onSubmitForm} />
         <ImageGallery>
           {imageGallery && <ImageGalleryItem imageGallery={imageGallery} />}
         </ImageGallery>
-        <LoadMoreBtn onClick={this.handleLoadMore} />
-      </div>
+        {status === 'pending' && <Loader />}
+        {status === 'resolved' && <LoadMoreBtn onClick={handleLoadMore} />}
+      </>
     );
   }
 }
