@@ -69,7 +69,6 @@ export class App extends Component {
             status: Status.RESOLVED,
             totalImages: total,
           });
-          this.scroll();
           return;
         }
       } catch (error) {
@@ -99,15 +98,6 @@ export class App extends Component {
     this.setState({ imageModal: null });
   };
 
-  scroll = () => {
-    const { height } = document.getElementById('gallery').firstElementChild.getBoundingClientRect();
-    console.log(height);
-    window.scrollBy({
-      top: height,
-      behavior: 'smooth',
-    });
-  }
-
   render() {
     const { onSubmitForm, handleLoadMore } = this;
     const {
@@ -129,12 +119,12 @@ export class App extends Component {
       <>
         <Searchbar onSubmit={onSubmitForm} prevSearchName={searchName} />
         <ImageGallery>
-          {imageGallery &&
+          {imageGallery && (
             <ImageGalleryItem
               imageGallery={imageGallery}
               onClick={this.openModal}
             />
-          }
+          )}
         </ImageGallery>
 
         {status === 'pending' && <Loader />}
@@ -142,7 +132,11 @@ export class App extends Component {
         {visibleLoadMoreButton && <LoadMoreBtn onClick={handleLoadMore} />}
 
         {imageModal && (
-          <Modal url={imageModal} alt={imageModalAlt} onCloseModal={this.closeModal} />
+          <Modal
+            url={imageModal}
+            alt={imageModalAlt}
+            onCloseModal={this.closeModal}
+          />
         )}
 
         {status === 'rejected' && <ErrorMessage onError={error} />}
