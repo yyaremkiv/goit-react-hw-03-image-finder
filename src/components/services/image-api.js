@@ -7,12 +7,12 @@ export default class NewsApiService {
     image_type: 'photo',
     orientation: 'horizontal',
     safesearch: 'true',
-    per_page: 4,
   };
-  async getResponse(query, page) {
+  async getResponse(query, page, perPage) {
     if (query) {
       this.params.q = query;
       this.params.page = page;
+      this.params.per_page = perPage;
     }
 
     const config = {

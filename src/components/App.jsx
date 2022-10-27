@@ -7,6 +7,8 @@ import NewsApiService from './services/image-api';
 import { LoadMoreBtn } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { ImageGalleryItem } from './ImageGalleryItem/ImageGalleryItem';
+import { Modal } from './Modal/Modal';
+import {ErrorMessage} from './ErrorMessage/ErrorMessage'
 
 const Status = {
   IDLE: 'idle',
@@ -21,32 +23,44 @@ export class App extends Component {
     searchName: '',
     imageGallery: [],
     page: 1,
+    perPage: 4,
+    totalImages: 0,
     error: null,
     status: Status.IDLE,
-
+    imageModal: '',
   };
 
   async componentDidUpdate(prevProps, prevState) {
-    const { searchName, imageGallery, page } = this.state;
+    const { searchName, imageGallery, page, perPage } = this.state;
 
     if (prevState.searchName !== searchName || prevState.page !== page) {
       this.setState({ status: Status.PENDING });
 
       try {
-        const response = await newsApiService.getResponse(searchName, page);
-
+        const response = await newsApiService.getResponse(searchName, page, perPage);
+        
+        if (response.data.total === 0) {
+          this.setState({ status: Status.REJECTED });
+          console.log('ничего не знайдено');
+          return;
+        }
         if (!imageGallery.length) {
           this.setState({
             imageGallery: response.data.hits,
             status: Status.RESOLVED,
+            totalImages: response.data.total,
           });
+          return;
         }
 
         if (imageGallery.length) {
+          console.log(response.data.total);
           this.setState({
             imageGallery: [...prevState.imageGallery, ...response.data.hits],
             status: Status.RESOLVED,
+            totalImages: response.data.total,
           });
+          return;
         }
       } catch (error) {
         this.setState({ error, status: Status.REJECTED });
@@ -65,18 +79,32 @@ export class App extends Component {
     this.setState({ searchName, imageGallery: [] });
   };
 
+  openModal = e => {
+    const imageModal = e.target.dataset.url;
+    console.log(e.target.dataset.url);
+    this.setState({ imageModal: imageModal });
+  };
+
+  closeModal = () => {
+    this.setState({ imageModal: null });
+  };
+
   render() {
     const { onSubmitForm, handleLoadMore } = this;
-    const { imageGallery, status } = this.state;
+    const { imageGallery, status, page, perPage, totalImages, imageModal, error} = this.state;
+
+    const visibleLoadMoreButton = totalImages > page*perPage && status === 'resolved';
 
     return (
       <>
         <Searchbar onSubmit={onSubmitForm} />
         <ImageGallery>
-          {imageGallery && <ImageGalleryItem imageGallery={imageGallery} />}
+          {imageGallery && <ImageGalleryItem imageGallery={imageGallery} onClick={this.openModal} />}
         </ImageGallery>
         {status === 'pending' && <Loader />}
-        {status === 'resolved' && <LoadMoreBtn onClick={handleLoadMore} />}
+        {visibleLoadMoreButton && <LoadMoreBtn onClick={handleLoadMore} />}
+        {imageModal && <Modal url={this.state.imageModal} onCloseModal={this.closeModal} />}
+        {status === 'rejected' && <ErrorMessage onError={error} />}
       </>
     );
   }
