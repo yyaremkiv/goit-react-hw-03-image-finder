@@ -1,7 +1,6 @@
 import React from 'react';
 import css from './Modal.module.scss';
 
-
 export class Modal extends React.Component {
   componentDidMount() {
     window.addEventListener('keydown', this.closeByEsc);
@@ -26,17 +25,12 @@ export class Modal extends React.Component {
   };
 
   render() {
-
-  const largeImageURL = 5;
-
-
-    const { url } = this.props;
-
+    const { url, alt } = this.props;
 
     return (
       <div className={css.overlay} onClick={this.closeByBackdrop}>
         <div className={css.modal}>
-          <img src={url} alt="" />
+          <img src={url} alt={alt} />
         </div>
       </div>
     );

@@ -1,19 +1,30 @@
 import React, { Component } from 'react';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import { IconContext } from 'react-icons';
+import { AiOutlineSearch } from 'react-icons/ai';
 import css from './Searchbar.module.scss';
 
 export class Searchbar extends Component {
-  state = {
-    nameImage: '',
-  };
+  state = { nameImage: '' };
 
   handleSubmit = event => {
+    const { nameImage } = this.state;
+    const { prevSearchName, onSubmit } = this.props;
+
     event.preventDefault();
-    if (!this.state.nameImage) {
-      alert('Please input image Name');
+    if (!nameImage) {
+      Notify.info('Please input image name for search');
       return;
     }
 
-    this.props.onSubmit(this.state.nameImage);
+    if (prevSearchName && nameImage === prevSearchName) {
+      Notify.info(
+        `Already presented results for the search term: ${nameImage}`
+      );
+      return;
+    }
+
+    onSubmit(nameImage);
     this.reset();
   };
 
@@ -31,7 +42,9 @@ export class Searchbar extends Component {
       <header className={css.searchbar}>
         <form className={css.searchForm} onSubmit={this.handleSubmit}>
           <button type="submit" className={css.searchFormButton}>
-            <span className={css.searchFormButtonLabel}>Search</span>
+            <IconContext.Provider value={{ color: 'blue', size: '30' }}>
+              <AiOutlineSearch />
+            </IconContext.Provider>
           </button>
 
           <input

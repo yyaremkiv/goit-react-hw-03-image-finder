@@ -1,33 +1,34 @@
 import React, { Component } from 'react';
-
-import { Searchbar } from './Searchbar/Searchbar';
-import { ImageGallery } from './ImageGallery/ImageGallery';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 import NewsApiService from './services/image-api';
+import { Searchbar } from './Searchbar/Searchbar';
+import { ImageGallery } from './ImageGallery/ImageGallery';
 import { LoadMoreBtn } from './Button/Button';
 import { Loader } from './Loader/Loader';
 import { ImageGalleryItem } from './ImageGalleryItem/ImageGalleryItem';
 import { Modal } from './Modal/Modal';
-import {ErrorMessage} from './ErrorMessage/ErrorMessage'
+import { ErrorMessage } from './ErrorMessage/ErrorMessage';
 
+const newsApiService = new NewsApiService();
 const Status = {
   IDLE: 'idle',
   PENDING: 'pending',
   RESOLVED: 'resolved',
   REJECTED: 'rejected',
 };
-const newsApiService = new NewsApiService();
 
 export class App extends Component {
   state = {
     searchName: '',
     imageGallery: [],
     page: 1,
-    perPage: 4,
+    perPage: 12,
     totalImages: 0,
     error: null,
     status: Status.IDLE,
     imageModal: '',
+    imageModalAlt: '',
   };
 
   async componentDidUpdate(prevProps, prevState) {
@@ -37,29 +38,38 @@ export class App extends Component {
       this.setState({ status: Status.PENDING });
 
       try {
-        const response = await newsApiService.getResponse(searchName, page, perPage);
-        
-        if (response.data.total === 0) {
-          this.setState({ status: Status.REJECTED });
-          console.log('ничего не знайдено');
+        const response = await newsApiService.getResponse(
+          searchName,
+          page,
+          perPage
+        );
+
+        const { total, hits } = response.data;
+
+        if (total === 0) {
+          this.setState({ status: Status.IDLE });
+          Notify.info(
+            `Nothing was found for "${searchName}". Please try again by changing the search entry`
+          );
           return;
         }
+
         if (!imageGallery.length) {
           this.setState({
-            imageGallery: response.data.hits,
+            imageGallery: hits,
             status: Status.RESOLVED,
-            totalImages: response.data.total,
+            totalImages: total,
           });
           return;
         }
 
         if (imageGallery.length) {
-          console.log(response.data.total);
           this.setState({
-            imageGallery: [...prevState.imageGallery, ...response.data.hits],
+            imageGallery: [...prevState.imageGallery, ...hits],
             status: Status.RESOLVED,
-            totalImages: response.data.total,
+            totalImages: total,
           });
+          this.scroll();
           return;
         }
       } catch (error) {
@@ -81,29 +91,60 @@ export class App extends Component {
 
   openModal = e => {
     const imageModal = e.target.dataset.url;
-    console.log(e.target.dataset.url);
-    this.setState({ imageModal: imageModal });
+    const imageModalAlt = e.target.alt;
+    this.setState({ imageModal, imageModalAlt });
   };
 
   closeModal = () => {
     this.setState({ imageModal: null });
   };
 
+  scroll = () => {
+    const { height } = document.getElementById('gallery').firstElementChild.getBoundingClientRect();
+    console.log(height);
+    window.scrollBy({
+      top: height,
+      behavior: 'smooth',
+    });
+  }
+
   render() {
     const { onSubmitForm, handleLoadMore } = this;
-    const { imageGallery, status, page, perPage, totalImages, imageModal, error} = this.state;
+    const {
+      searchName,
+      imageGallery,
+      status,
+      page,
+      perPage,
+      totalImages,
+      imageModal,
+      imageModalAlt,
+      error,
+    } = this.state;
 
-    const visibleLoadMoreButton = totalImages > page*perPage && status === 'resolved';
+    const visibleLoadMoreButton =
+      totalImages > page * perPage && status === 'resolved';
 
     return (
       <>
-        <Searchbar onSubmit={onSubmitForm} />
+        <Searchbar onSubmit={onSubmitForm} prevSearchName={searchName} />
         <ImageGallery>
-          {imageGallery && <ImageGalleryItem imageGallery={imageGallery} onClick={this.openModal} />}
+          {imageGallery &&
+            <ImageGalleryItem
+              imageGallery={imageGallery}
+              onClick={this.openModal}
+            />
+          }
         </ImageGallery>
+
         {status === 'pending' && <Loader />}
+
         {visibleLoadMoreButton && <LoadMoreBtn onClick={handleLoadMore} />}
-        {imageModal && <Modal url={this.state.imageModal} onCloseModal={this.closeModal} />}
+
+        {imageModal && (
+          <Modal url={imageModal} alt={imageModalAlt} onCloseModal={this.closeModal} />
+        )}
+
         {status === 'rejected' && <ErrorMessage onError={error} />}
       </>
     );
