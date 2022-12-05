@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { IconContext } from 'react-icons';
 import { AiOutlineSearch } from 'react-icons/ai';
@@ -25,7 +26,7 @@ export class Searchbar extends Component {
     }
 
     onSubmit(nameImage);
-    this.reset();
+    this.setState({ nameImage: '' });
   };
 
   handleChangeName = event => {
@@ -34,9 +35,6 @@ export class Searchbar extends Component {
     });
   };
 
-  reset() {
-    this.setState({ nameImage: '' });
-  }
   render() {
     return (
       <header className={css.searchbar}>
@@ -61,3 +59,8 @@ export class Searchbar extends Component {
     );
   }
 }
+
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+  prevSearchName: PropTypes.string.isRequired,
+};
