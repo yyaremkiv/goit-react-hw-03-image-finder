@@ -5,12 +5,10 @@ import css from './Modal.module.scss';
 export class Modal extends React.Component {
   componentDidMount() {
     window.addEventListener('keydown', this.closeByEsc);
-    window.addEventListener('click', this.closeByBackdrop);
   }
 
   componentWillUnmount() {
     window.removeEventListener('keydown', this.closeByEsc);
-    window.removeEventListener('click', this.closeByBackdrop);
   }
 
   closeByEsc = e => {

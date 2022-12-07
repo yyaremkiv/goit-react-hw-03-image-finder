@@ -85,7 +85,7 @@ export class App extends Component {
   };
 
   onSubmitForm = searchName => {
-    this.setState({ searchName, imageGallery: [] });
+    this.setState({ searchName, imageGallery: [], page: 1 });
   };
 
   openModal = e => {
